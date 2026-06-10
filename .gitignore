@@ -22,3 +22,18 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# PyTorch checkpoints / saved models
+*.pth
+*.pt
+*.ckpt
+
+# Large dataset raw files (MQ2008)
+week3/MQ2008/NULL.txt
+week3/MQ2008/Querylevelnorm.txt
+week3/MQ2008/min.txt
+week3/MQ2008/S1.txt
+week3/MQ2008/S2.txt
+week3/MQ2008/S3.txt
+week3/MQ2008/S4.txt
+week3/MQ2008/S5.txt
