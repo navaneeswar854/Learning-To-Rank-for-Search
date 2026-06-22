@@ -1,4 +1,4 @@
-[build-system]
+﻿[build-system]
 requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
 
@@ -19,8 +19,5 @@ dependencies = [
     "seaborn",
 ]
 
-[tool.setuptools]
-packages = ["ltr"]
-
-[tool.setuptools.package-dir]
-ltr = "src"
+[tool.setuptools.packages.find]
+where = ["src"]
