@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ltr"
+version = "0.1.0"
+description = "Learning-to-Rank package for LETOR4 / MQ2008"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "torch",
+    "numpy",
+    "scipy",
+    "scikit-learn",
+    "tqdm",
+    "matplotlib",
+    "pandas",
+    "seaborn",
+]
+
+[tool.setuptools]
+packages = ["ltr"]
+
+[tool.setuptools.package-dir]
+ltr = "src"
