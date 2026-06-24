@@ -27,8 +27,8 @@ Run in order — each builds on the conceptual foundation of the previous one.
 | 1 | [`01_pointwise`](notebooks/01_pointwise.ipynb) | Pointwise Regression | Treat ranking as regression; predict relevance score per document independently |
 | 2 | [`02_ranknet`](notebooks/02_ranknet.ipynb) | RankNet | Pairwise neural network; minimise cross-entropy loss over document pairs |
 | 3 | [`03_lambdarank`](notebooks/03_lambdarank.ipynb) | LambdaRank | Pairwise gradient trick; weight pair updates by the NDCG change they would cause |
-| 4 | [`04_comparison`](notebooks/04_comparison.ipynb) | Full Comparison | Head-to-head benchmark of all four methods across all folds |
-| 5 | [`05_lambdamart`](notebooks/05_lambdamart.ipynb) | LambdaMART | Gradient-boosted trees trained with LambdaRank gradients |
+| 4 | [`comparision`](notebooks/comparision.ipynb) | Full Comparison | Head-to-head benchmark of all four methods across all folds |
+| 5 | [`04_lambdamart`](notebooks/04_lambdamart.ipynb) | LambdaMART | Gradient-boosted trees trained with LambdaRank gradients |
 
 ---
 
@@ -85,8 +85,8 @@ Pairwise Approaches/
 │   ├── 01_pointwise.ipynb
 │   ├── 02_ranknet.ipynb
 │   ├── 03_lambdarank.ipynb
-│   ├── 04_comparison.ipynb
-│   └── 05_lambdamart.ipynb
+│   ├── comparision.ipynb
+│   └── 04_lambdamart.ipynb
 │
 └── ltr_results/                    ← Saved evaluation results (JSON)
     ├── pointwise_results.json
