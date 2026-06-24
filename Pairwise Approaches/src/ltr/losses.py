@@ -8,8 +8,10 @@ Functions
 pointwise_mse       — MSE between predicted scores and relevance labels.
 ranknet_loss        — Vectorized pairwise BCE loss on (i > j) pairs.
 lambda_gradients    — Vectorized LambdaRank gradient computation (Fix #3).
+lambda_gradients_and_hessians — Computes both lambdas and hessians for LambdaMART.
 """
 
+from typing import Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -185,3 +187,89 @@ def lambda_gradients(
     return torch.tensor(
         lambdas, dtype=torch.float32, device=scores_sq.device
     ).unsqueeze(1)
+
+
+def lambda_gradients_and_hessians(
+    scores: torch.Tensor,
+    labels: torch.Tensor,
+    k: int = 10,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Vectorized LambdaMART gradient and hessian computation.
+
+    Returns both the first-order gradients (lambdas) and second-order
+    derivatives (hessians) needed for Newton leaf steps in LambdaMART.
+
+    Parameters
+    ----------
+    scores : torch.Tensor, shape (num_docs, 1)
+        Raw predicted scores from the model.
+    labels : torch.Tensor, shape (num_docs,)
+        Ground-truth relevance labels.
+    k : int
+        NDCG cutoff — only positions ≤ k contribute to |ΔNDCG|.
+
+    Returns
+    -------
+    (lambdas, hessians) : Tuple[torch.Tensor, torch.Tensor]
+        Both tensors have shape (num_docs, 1).
+    """
+    scores_sq  = scores.squeeze()                           # (N,)
+    labels_np  = labels.cpu().numpy().astype(np.float64)   # (N,)
+    scores_np  = scores_sq.detach().cpu().numpy().astype(np.float64)  # (N,)
+    N = len(labels_np)
+
+    if N == 0:
+        return torch.zeros_like(scores), torch.zeros_like(scores)
+
+    # ── Ideal DCG ─────────────────────────────────────────────────────────
+    ideal_labels = np.sort(labels_np)[::-1]
+    idcg = _dcg_np(ideal_labels, k)
+
+    if idcg == 0.0:
+        # No relevant documents — all lambdas and hessians are zero
+        zeros = torch.zeros_like(scores_sq).unsqueeze(1)
+        return zeros, zeros
+
+    # ── Current ranking ────────────────────────────────────────────────────
+    ranked_order = np.argsort(scores_np)[::-1]   # doc indices sorted by score desc
+    rank_of = np.empty(N, dtype=np.int64)
+    for pos, doc_idx in enumerate(ranked_order):
+        rank_of[doc_idx] = pos                   # 0-indexed rank of each document
+
+    # ── Position discounts: 1/log2(rank+2), zero for ranks ≥ k ───────────
+    disc = np.where(rank_of < k, 1.0 / np.log2(rank_of + 2.0), 0.0)  # (N,)
+
+    # ── Per-document gain: 2^rel − 1 ──────────────────────────────────────
+    gain = (2.0 ** labels_np) - 1.0  # (N,)
+
+    # ── Vectorized (N×N) matrices ─────────────────────────────────────────
+    # |ΔNDCG| for every pair (i, j)
+    gain_diff  = gain[:, None] - gain[None, :]          # (N, N)
+    disc_diff  = disc[:, None] - disc[None, :]          # (N, N)
+    delta_ndcg = np.abs(gain_diff * disc_diff) / idcg   # (N, N)
+
+    # ρ_ij = σ(−(s_i − s_j)) — numerically clipped to avoid overflow
+    s_diff = scores_np[:, None] - scores_np[None, :]            # (N, N)
+    rho    = 1.0 / (1.0 + np.exp(np.clip(s_diff, -500, 500)))  # (N, N)
+
+    # Valid pair mask: only where label_i > label_j
+    mask = (labels_np[:, None] > labels_np[None, :]).astype(np.float64)  # (N, N)
+
+    # Lambda matrix: λ_ij for each valid pair
+    lam_matrix = rho * delta_ndcg * mask  # (N, N)
+
+    # Net lambda: doc i accumulates negative lambdas for pairs it wins,
+    # and positive lambdas for pairs it loses.
+    lambdas = -lam_matrix.sum(axis=1) + lam_matrix.sum(axis=0)  # (N,)
+
+    # Hessian matrix: w_ij = ρ_ij * (1 - ρ_ij) * |ΔNDCG_ij| * mask
+    hess_matrix = rho * (1.0 - rho) * delta_ndcg * mask  # (N, N)
+
+    # Net hessian: symmetric, so doc i accumulates from both sides
+    hessians = hess_matrix.sum(axis=1) + hess_matrix.sum(axis=0)  # (N,)
+
+    lam_t = torch.tensor(lambdas, dtype=torch.float32, device=scores_sq.device).unsqueeze(1)
+    hess_t = torch.tensor(hessians, dtype=torch.float32, device=scores_sq.device).unsqueeze(1)
+
+    return lam_t, hess_t

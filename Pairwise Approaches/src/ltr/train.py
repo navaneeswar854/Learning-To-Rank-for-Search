@@ -8,6 +8,7 @@ Public API
 set_seed        — Fix all random seeds for reproducibility.
 train           — Single-run training with early stopping on val NDCG@k (Fix #2).
 train_multiseed — Multi-seed wrapper reporting Mean ± Std (Fix #8).
+train_lambdamart_multiseed — Multi-seed wrapper for LambdaMART.
 
 Fix #2 — Early stopping on validation NDCG@k
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -238,6 +239,52 @@ def train_multiseed(
         trained_model, _ = train(
             model, train_loader, val_loader,
             mode=mode, device=device, **train_kwargs
+        )
+
+        ndcg_scores = mean_ndcg(
+            trained_model, test_loader, k_list=k_list, device=device
+        )
+        per_seed_results.append(ndcg_scores)
+
+    # ── Aggregate ─────────────────────────────────────────────────────────
+    summary: Dict[int, Dict[str, float]] = {}
+    for k in k_list:
+        values = [r[k] for r in per_seed_results]
+        summary[k] = {
+            "mean": float(np.mean(values)),
+            "std":  float(np.std(values)),
+        }
+
+    return {
+        "per_seed": per_seed_results,
+        "summary":  summary,
+    }
+
+
+def train_lambdamart_multiseed(
+    model_fn: Callable,
+    train_loader,
+    val_loader,
+    test_loader,
+    seeds: Tuple[int, ...] = (42, 123, 456),
+    k_list: Tuple[int, ...] = (1, 3, 5, 10),
+    device: str = "cpu",
+    **train_kwargs,
+) -> Dict:
+    """
+    Multi-seed wrapper specifically for LambdaMART.
+    """
+    per_seed_results: List[Dict[int, float]] = []
+
+    for seed in seeds:
+        set_seed(seed)
+        model = model_fn()
+
+        trained_model, _ = model.fit(
+            train_loader=train_loader, 
+            val_loader=val_loader,
+            device=device, 
+            **train_kwargs
         )
 
         ndcg_scores = mean_ndcg(
