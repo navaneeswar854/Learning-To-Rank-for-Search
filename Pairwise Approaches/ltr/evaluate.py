@@ -21,6 +21,7 @@ def cross_fold_eval(
     model_fn: Callable,
     mode: str,
     base_path: str = "/content/MQ2008",
+    data_loader_fn: Optional[Callable] = None,
     folds: Tuple[int, ...] = (1, 2, 3, 4, 5),
     seeds: Tuple[int, ...] = (42, 123, 456),
     k_list: Tuple[int, ...] = (1, 3, 5, 10),
@@ -64,6 +65,9 @@ def cross_fold_eval(
         ``'overall'``  — global ``{k: {'mean': float, 'std': float}}``
                          aggregated across all folds and seeds.
     """
+    if data_loader_fn is None:
+        from .data import load_fold as data_loader_fn
+
     fold_results: List[Dict] = []
 
     for fold_num in folds:
@@ -71,7 +75,7 @@ def cross_fold_eval(
         print(f"  FOLD {fold_num} / {len(folds)}")
         print(f"{'═' * 55}")
 
-        train_loader, val_loader, test_loader = load_fold(
+        train_loader, val_loader, test_loader = data_loader_fn(
             base_path=base_path,
             fold_num=fold_num,
             batch_size=batch_size,
@@ -130,6 +134,7 @@ def cross_fold_eval(
 def cross_fold_eval_lambdamart(
     model_fn: Callable,
     base_path: str = "/content/MQ2008",
+    data_loader_fn: Optional[Callable] = None,
     folds: Tuple[int, ...] = (1, 2, 3, 4, 5),
     seeds: Tuple[int, ...] = (42, 123, 456),
     k_list: Tuple[int, ...] = (1, 3, 5, 10),
@@ -141,6 +146,9 @@ def cross_fold_eval_lambdamart(
     """
     Cross-fold evaluation specifically for LambdaMART.
     """
+    if data_loader_fn is None:
+        from .data import load_fold as data_loader_fn
+
     fold_results: List[Dict] = []
 
     for fold_num in folds:
@@ -148,7 +156,7 @@ def cross_fold_eval_lambdamart(
         print(f"  FOLD {fold_num} / {len(folds)}")
         print(f"{'═' * 55}")
 
-        train_loader, val_loader, test_loader = load_fold(
+        train_loader, val_loader, test_loader = data_loader_fn(
             base_path=base_path,
             fold_num=fold_num,
             batch_size=batch_size,
