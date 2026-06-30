@@ -34,7 +34,7 @@ def pointwise_mse(scores: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     -------
     Scalar loss tensor.
     """
-    return F.mse_loss(scores.squeeze(), labels.float())
+    return F.mse_loss(scores.squeeze(-1), labels.float())
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ def ranknet_loss(scores: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     -------
     Scalar loss tensor.
     """
-    scores = scores.squeeze()  # (num_docs,)
+    scores = scores.squeeze(-1)  # (num_docs,)
 
     # Build all pairwise score differences: diff[i, j] = s_i − s_j
     scores_diff = scores.unsqueeze(1) - scores.unsqueeze(0)  # (N, N)
@@ -136,7 +136,7 @@ def lambda_gradients(
         Lambda values to pass directly to ``scores.backward(lambdas)``.
         Returns zeros if IDCG == 0 (no relevant documents).
     """
-    scores_sq  = scores.squeeze()                           # (N,)
+    scores_sq  = scores.squeeze(-1)                           # (N,)
     labels_np  = labels.cpu().numpy().astype(np.float64)   # (N,)
     scores_np  = scores_sq.detach().cpu().numpy().astype(np.float64)  # (N,)
     N = len(labels_np)
@@ -214,7 +214,7 @@ def lambda_gradients_and_hessians(
     (lambdas, hessians) : Tuple[torch.Tensor, torch.Tensor]
         Both tensors have shape (num_docs, 1).
     """
-    scores_sq  = scores.squeeze()                           # (N,)
+    scores_sq  = scores.squeeze(-1)                           # (N,)
     labels_np  = labels.cpu().numpy().astype(np.float64)   # (N,)
     scores_np  = scores_sq.detach().cpu().numpy().astype(np.float64)  # (N,)
     N = len(labels_np)
