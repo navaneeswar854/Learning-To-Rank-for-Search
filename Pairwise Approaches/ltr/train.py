@@ -66,7 +66,7 @@ def train(
     patience: int = 10,
     device: str = "cpu",
     verbose: bool = True,
-) -> Tuple[torch.nn.Module, List[float], List[float]]:
+) -> Tuple[torch.nn.Module, torch.nn.Module, List[float], List[float]]:
     """
     Unified training loop for Pointwise, RankNet, and LambdaRank.
 
@@ -87,10 +87,10 @@ def train(
     device       : ``'cpu'`` or ``'cuda'``.
     verbose      : Print per-epoch metrics when True.
 
-    Returns
     -------
-    (best_model, train_loss_history, val_ndcg_history)
+    (best_model, last_model, train_loss_history, val_ndcg_history)
         ``best_model``          — model restored to best-val-NDCG@k weights.
+        ``last_model``          — model with weights from the final training epoch.
         ``train_loss_history``  — list of average training loss values per epoch.
         ``val_ndcg_history``    — list of val NDCG@k values, one per epoch.
     """
@@ -189,11 +189,14 @@ def train(
                 )
             break
 
-    # Restore weights from the best epoch
+    # The model currently holds weights from the last epoch
+    last_model = copy.deepcopy(model)
+
+    # Restore weights from the best epoch to the main model
     if best_weights is not None:
         model.load_state_dict(best_weights)
 
-    return model, train_loss_history, val_ndcg_history
+    return model, last_model, train_loss_history, val_ndcg_history
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -244,7 +247,7 @@ def train_multiseed(
         set_seed(seed)
         model = model_fn().to(device)
 
-        trained_model, _, _ = train(
+        trained_model, _, _, _ = train(
             model, train_loader, val_loader,
             mode=mode, device=device, **train_kwargs
         )
