@@ -66,7 +66,7 @@ def train(
     patience: int = 10,
     device: str = "cpu",
     verbose: bool = True,
-) -> Tuple[torch.nn.Module, List[float]]:
+) -> Tuple[torch.nn.Module, List[float], List[float]]:
     """
     Unified training loop for Pointwise, RankNet, and LambdaRank.
 
@@ -89,9 +89,10 @@ def train(
 
     Returns
     -------
-    (best_model, val_ndcg_history)
-        ``best_model``        — model restored to best-val-NDCG@k weights.
-        ``val_ndcg_history``  — list of val NDCG@k values, one per epoch.
+    (best_model, train_loss_history, val_ndcg_history)
+        ``best_model``          — model restored to best-val-NDCG@k weights.
+        ``train_loss_history``  — list of average training loss values per epoch.
+        ``val_ndcg_history``    — list of val NDCG@k values, one per epoch.
     """
     _VALID_MODES = ("pointwise", "ranknet", "lambdarank")
     if mode not in _VALID_MODES:
@@ -102,6 +103,7 @@ def train(
 
     best_val_ndcg: float = -1.0
     best_weights = None
+    train_loss_history: List[float] = []
     val_ndcg_history: List[float] = []
     epochs_no_improve: int = 0
 
@@ -109,6 +111,7 @@ def train(
 
         # ──────────────────── TRAINING PHASE ──────────────────────────────
         model.train()
+        epoch_losses = []
 
         for batch_qids, batch_feats, batch_labels in train_loader:
 
@@ -151,6 +154,10 @@ def train(
                     avg_loss = sum(batch_losses) / len(batch_losses)
                     avg_loss.backward()
                     optimizer.step()
+                    epoch_losses.append(avg_loss.item())
+
+        train_loss = np.mean(epoch_losses) if epoch_losses else 0.0
+        train_loss_history.append(float(train_loss))
 
         # ──────────────────── VALIDATION PHASE (Fix #2) ───────────────────
         model.eval()
@@ -169,6 +176,7 @@ def train(
             marker = "  ← best" if improved else ""
             print(
                 f"Epoch {epoch + 1:02d}/{epochs} | "
+                f"Train Loss: {train_loss:.4f} | "
                 f"Val NDCG@{k}: {val_ndcg:.4f}{marker}"
             )
 
@@ -185,7 +193,7 @@ def train(
     if best_weights is not None:
         model.load_state_dict(best_weights)
 
-    return model, val_ndcg_history
+    return model, train_loss_history, val_ndcg_history
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -236,7 +244,7 @@ def train_multiseed(
         set_seed(seed)
         model = model_fn().to(device)
 
-        trained_model, _ = train(
+        trained_model, _, _ = train(
             model, train_loader, val_loader,
             mode=mode, device=device, **train_kwargs
         )
