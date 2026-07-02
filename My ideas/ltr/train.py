@@ -44,7 +44,6 @@ from typing import List, Tuple
 import torch
 import torch.nn as nn
 
-from ltr.data    import load_fold
 from ltr.loss    import WeightedRelevanceBCE
 from ltr.metrics import mean_ndcg
 from ltr.model   import ScoringMLP
@@ -86,6 +85,7 @@ class TrainConfig:
     """All hyperparameters for one training run."""
 
     # Data
+    dataset    : str       = "mq2008"  # "mq2008" or "mslr"
     data_path  : str       = "/content/MQ2008"
     fold       : int       = 1
     batch_size : int       = 4
@@ -143,6 +143,11 @@ def train(
     print(f"{'='*55}")
 
     # -- Data -----------------------------------------------------------------
+    if cfg.dataset.lower() == "mslr":
+        from ltr.data_mslr import load_fold
+    else:
+        from ltr.data import load_fold
+
     train_loader, val_loader, _ = load_fold(
         base_path  = cfg.data_path,
         fold_num   = cfg.fold,
@@ -261,6 +266,8 @@ def _parse_args() -> TrainConfig:
         description="Train ScoringMLP on LETOR / MQ2008 data.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    p.add_argument("--dataset",     type=str,   default="mq2008",
+                   choices=["mq2008", "mslr"])
     p.add_argument("--data-path",   type=str,   default="/content/MQ2008")
     p.add_argument("--fold",        type=int,   default=1)
     p.add_argument("--batch-size",  type=int,   default=4)
@@ -275,6 +282,7 @@ def _parse_args() -> TrainConfig:
 
     a = p.parse_args()
     return TrainConfig(
+        dataset     = a.dataset,
         data_path   = a.data_path,
         fold        = a.fold,
         batch_size  = a.batch_size,
