@@ -1,15 +1,15 @@
-"""
-ltr — Learning-to-Rank package
+ï»¿"""
+ltr -- Learning-to-Rank package
 ================================
 A clean, modular LTR library built on PyTorch.
 
 Modules
 -------
-ltr.model    : ScoringMLP          — flexible MLP scorer
-ltr.loss     : WeightedRelevanceBCE — custom weighted per-neuron BCE loss
-ltr.data     : load_fold            — LETOR / MQ2008 data loading
-ltr.metrics  : mean_ndcg etc.       — NDCG evaluation & significance tests
-ltr.train    : train, TrainConfig   — end-to-end training with early stopping
+ltr.model    : ScoringMLP           - flexible MLP scorer
+ltr.loss     : WeightedRelevanceBCE - custom weighted per-neuron BCE loss
+ltr.data     : load_fold            - LETOR / MQ2008 data loading
+ltr.metrics  : mean_ndcg etc.       - NDCG evaluation & significance tests
+ltr.train    : train, TrainConfig   - end-to-end training with early stopping
 
 Quick start
 -----------
