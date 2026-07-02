@@ -133,10 +133,10 @@ class ScoringMLP(nn.Module):
                 layers.append(nn.Dropout(p=dropout))
             prev_dim = dim
 
-        # Final projection head — linear then softmax so outputs are
-        # probabilities that sum to 1 across all k output neurons.
+        # Final projection head — linear then sigmoid so outputs are
+        # probabilities in the range [0, 1].
         layers.append(nn.Linear(prev_dim, output_dim))
-        layers.append(nn.Softmax(dim=-1))
+        layers.append(nn.Sigmoid())
 
         self.scorer = nn.Sequential(*layers)
 
