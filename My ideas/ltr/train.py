@@ -165,7 +165,7 @@ def train(
     print(f"\nParameters  : {model.count_parameters():,}\n")
 
     scorer    = _ExpectedRelevanceScorer(model).to(device)
-    criterion = WeightedRelevanceBCE(num_classes=cfg.num_classes)
+    criterion = WeightedRelevanceBCE(num_classes=cfg.num_classes).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=cfg.lr)
 
     # -- History & early-stopping state ---------------------------------------
