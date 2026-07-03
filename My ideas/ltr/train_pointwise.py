@@ -87,42 +87,62 @@ def compute_lambdas(
 
     Formula
     -------
-        lambda_i = s_i - s_min - (r_i * (s_max - s_min)) / max_relevance
+        k        = max_relevance  (e.g. 4 for MSLR, 2 for MQ2008)
+        x        = abs(s_max - s_min - k)
+        t        = 2*(k - x) / ((k - 2) * x)      -- x is in the DENOMINATOR
+        lambda_i = (1 - t)*(s_i - r_i)
+                 - t*(s_i - s_min - r_i*(s_max - s_min)/k)
+                 + (s_max + s_min - k)
 
-    Computed on DETACHED scores to avoid building a second computation graph
-    on top of the already-tracked scores.  The lambdas are then injected as
-    external gradients via scores.backward(gradient=lambdas).
+    Term breakdown
+    --------------
+        (1-t)*(s_i - r_i)                     MSE-like pull toward raw label
+        t*(s_i - s_min - r_i*(s_max-s_min)/k) proportional position pull
+        (s_max + s_min - k)                    centering shift (scalar)
+
+    Behaviour of t
+    --------------
+        x = 0 (spread == k, ideal) -> t -> inf  (clipped by eps)
+        x large (poor spread)      -> t -> 0    (MSE pull dominates)
 
     Parameters
     ----------
-    scores : torch.Tensor, shape (N,)
-        Raw predicted scores from PointwiseScorer (unbounded, no activation).
-        Must have requires_grad=True.
-    labels : torch.Tensor, shape (N,)
-        Ground truth relevance labels as floats.
-    max_relevance : int
-        The perfect (maximum possible) relevance label for this dataset.
-        e.g. 4 for MSLR-WEB10K (labels 0-4), 2 for MQ2008 (labels 0-2).
-        This normalises r_i so that the highest-relevance doc always maps
-        to the top of the score range, regardless of dataset.
+    scores        : shape (N,), requires_grad=True
+    labels        : shape (N,), ground truth relevance labels
+    max_relevance : highest possible relevance label (k)
 
     Returns
     -------
-    torch.Tensor, shape (N,)
-        Per-document lambda values.
-        Positive -> score is too high -> gradient descent will decrease it.
-        Negative -> score is too low  -> gradient descent will increase it.
+    torch.Tensor, shape (N,)  -- normalized by N
     """
-    s = scores.detach()          # detach: lambdas are not part of the graph
+    k   = float(max_relevance)
+    s   = scores.detach()
+    r   = labels.float()
+
     s_min = s.min()
     s_max = s.max()
 
-    r = labels.float()
-    targets = r * (s_max - s_min) / float(max_relevance)  # target position in score range
-    lambdas = s - s_min - targets                          # residual = current - target
+    # x: how far the score spread deviates from the ideal spread k
+    x = (s_max - s_min - k).abs()
 
-    # Normalize by number of documents (keeps gradient scale stable across
-    # queries with very different document counts)
+    # t = 2*(k-x) / ((k-2)*x)   -- x in denominator
+    # eps on both (k-2) and x to prevent division by zero:
+    #   x = 0 when spread = k exactly
+    #   k = 2 for MQ2008
+    eps = 1e-8
+    t   = 2.0 * (k - x) / ((k - 2.0 + eps) * (x + eps))
+
+    # Term 1: MSE-like pull -- push each score toward its raw relevance label
+    term1 = (1.0 - t) * (s - r)
+
+    # Term 2: proportional position pull
+    term2 = t * (s - s_min - r * (s_max - s_min) / k)
+
+    # Term 3: centering shift (scalar, same for all docs in this query)
+    term3 = s_max + s_min - k
+
+    lambdas = term1 - term2 + term3
+
     return lambdas / len(labels)
 
 

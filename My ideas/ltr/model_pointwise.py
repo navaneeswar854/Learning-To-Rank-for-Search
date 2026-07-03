@@ -56,8 +56,9 @@ class PointwiseScorer(nn.Module):
 
     Output range
     ------------
-    The final layer is followed by Sigmoid, so all outputs are in (0, 1).
-    This gives a natural, bounded relevance score per document.
+    No output activation. Scores are unbounded raw values in (-inf, +inf).
+    This keeps lambda gradients unconstrained so they can push scores
+    freely in either direction without hitting a saturation ceiling.
 
     Parameters
     ----------
@@ -117,10 +118,9 @@ class PointwiseScorer(nn.Module):
                 layers.append(nn.Dropout(p=dropout))
             prev_dim = dim
 
-        # Final linear projection to a single scalar, followed by Sigmoid.
-        # Output range: (0, 1)  -- a soft probability-like relevance score.
+        # Final linear projection to a single scalar -- NO activation.
+        # Output range: (-inf, +inf)  -- unbounded raw relevance score.
         layers.append(nn.Linear(prev_dim, 1))
-        layers.append(nn.Sigmoid())
 
         self.scorer = nn.Sequential(*layers)
 
