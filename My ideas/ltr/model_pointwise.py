@@ -49,10 +49,15 @@ class PointwiseScorer(nn.Module):
     Designed specifically for custom lambda-gradient training where you
     compute the gradient for each document manually and inject it via::
 
-        scores = model(feats)                    # (N,)
+        scores = model(feats)                    # (N,)  range: (0, 1)
         lambdas = your_lambda_fn(scores, labels) # (N,)
         scores.backward(gradient=lambdas)
         optimizer.step()
+
+    Output range
+    ------------
+    The final layer is followed by Sigmoid, so all outputs are in (0, 1).
+    This gives a natural, bounded relevance score per document.
 
     Parameters
     ----------
@@ -112,9 +117,10 @@ class PointwiseScorer(nn.Module):
                 layers.append(nn.Dropout(p=dropout))
             prev_dim = dim
 
-        # Final linear projection to a single scalar -- NO activation.
-        # This keeps the output unbounded so lambda gradients are not squashed.
+        # Final linear projection to a single scalar, followed by Sigmoid.
+        # Output range: (0, 1)  -- a soft probability-like relevance score.
         layers.append(nn.Linear(prev_dim, 1))
+        layers.append(nn.Sigmoid())
 
         self.scorer = nn.Sequential(*layers)
 
