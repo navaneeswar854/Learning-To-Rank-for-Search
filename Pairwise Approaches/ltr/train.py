@@ -161,6 +161,7 @@ def train(
 
         # ──────────────────── VALIDATION PHASE (Fix #2) ───────────────────
         model.eval()
+        train_ndcg = mean_ndcg(model, train_loader, k_list=(k,), device=device)[k]
         val_ndcg = mean_ndcg(model, val_loader, k_list=(k,), device=device)[k]
         val_ndcg_history.append(val_ndcg)
 
@@ -177,6 +178,7 @@ def train(
             print(
                 f"Epoch {epoch + 1:02d}/{epochs} | "
                 f"Train Loss: {train_loss:.4f} | "
+                f"Train NDCG@{k}: {train_ndcg:.4f} | "
                 f"Val NDCG@{k}: {val_ndcg:.4f}{marker}"
             )
 
