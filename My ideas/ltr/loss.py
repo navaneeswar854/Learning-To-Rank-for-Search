@@ -198,7 +198,7 @@ class WeightedRelevanceBCE(nn.Module):
             # p comes directly from the Softmax output — no sigmoid required.
             bce = -(
                 targets         * torch.log(probs + self.eps)
-                + (1 - targets) * (torch.log(1 - probs + self.eps) + probs)
+                + (1 - targets) * torch.log(1 - probs + self.eps)
             )
 
         # -- Apply per-neuron weights: weights shape (k,) -> broadcast (N, k) -

@@ -108,7 +108,7 @@ class MSLRQueryDataset(Dataset):
             # Training split: compute stats from this file
             self.mean = all_raw_docs.mean(axis=0)   # (111,)
             self.std  = all_raw_docs.std(axis=0)    # (111,)
-            self.std[self.std == 0.0] = 1.0         # avoid div-by-zero for constant features
+            self.std[self.std < 1e-5] = 1.0         # avoid div-by-zero for constant/near-constant features
 
         # ── Normalize and convert to tensors ─────────────────────────────────
         normalized = []

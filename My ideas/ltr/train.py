@@ -97,7 +97,7 @@ class TrainConfig:
     dropout    : float     = 0.0
 
     # Optimiser
-    lr         : float     = 1e-3
+    lr         : float     = 1e-4
     epochs     : int       = 100
 
     # Early stopping
@@ -204,6 +204,7 @@ def train(
             # Average loss over queries in this batch
             batch_loss = batch_loss / len(feats_list)
             batch_loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
             total_loss  += batch_loss.item()
@@ -275,7 +276,7 @@ def _parse_args() -> TrainConfig:
     p.add_argument("--hidden-dims", type=int,   nargs="+", default=[64, 32])
     p.add_argument("--num-classes", type=int,   default=3)
     p.add_argument("--dropout",     type=float, default=0.0)
-    p.add_argument("--lr",          type=float, default=1e-3)
+    p.add_argument("--lr",          type=float, default=1e-4)
     p.add_argument("--epochs",      type=int,   default=100)
     p.add_argument("--patience",    type=int,   default=10)
     p.add_argument("--save-path",   type=str,   default="best_model.pt")
