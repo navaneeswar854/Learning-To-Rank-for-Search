@@ -125,12 +125,14 @@ def compute_lambdas(
     # x: how far the score spread deviates from the ideal spread k
     x = (s_max - s_min - k).abs()
 
-    # t = 2*(k-x) / ((k-2)*x)   -- x in denominator
-    # eps on both (k-2) and x to prevent division by zero:
-    #   x = 0 when spread = k exactly
-    #   k = 2 for MQ2008
+    # t = 2*(k-x) / (k*(2+x) - 4*x)
+    # Denominator simplification:
+    #   k*(2+x) - 4*x = 2k + x*(k-4)
+    # Special case k=4: denominator = 8 (constant), so t = (4-x)/4
+    # eps guards against zero denominator (e.g. k=2 when x=2)
     eps = 1e-8
-    t   = 2.0 * (k - x) / ((k - 2.0 + eps) * (x + eps))
+    denom = k * (2.0 + x) - 4.0 * x
+    t     = 2.0 * (k - x) / (denom + eps)
 
     # Term 1: MSE-like pull -- push each score toward its raw relevance label
     term1 = (1.0 - t) * (s - r)
