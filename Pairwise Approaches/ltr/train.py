@@ -62,6 +62,7 @@ def train(
     mode: str = "pointwise",
     epochs: int = 50,
     lr: float = 0.001,
+    weight_decay: float = 0.0,
     k: int = 10,
     patience: int = 10,
     device: str = "cpu",
@@ -81,6 +82,8 @@ def train(
     mode         : ``'pointwise'``, ``'ranknet'``, or ``'lambdarank'``.
     epochs       : Maximum number of training epochs.
     lr           : Adam learning rate.
+    weight_decay : L2 regularization coefficient passed to Adam. Default 0.0
+                   (no regularization). Example: ``1e-4``.
     k            : NDCG cutoff used for validation and early stopping.
     patience     : Stop training if val NDCG@k does not improve for this
                    many consecutive epochs.  Set to 0 to disable early stopping.
@@ -99,7 +102,7 @@ def train(
         raise ValueError(f"mode must be one of {_VALID_MODES}, got '{mode}'.")
 
     model = model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     best_val_ndcg: float = -1.0
     best_weights = None
