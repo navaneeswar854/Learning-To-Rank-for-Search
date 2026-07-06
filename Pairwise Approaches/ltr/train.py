@@ -112,6 +112,7 @@ def train(
         # ──────────────────── TRAINING PHASE ──────────────────────────────
         model.train()
         epoch_losses = []
+        epoch_lambda_norms = []  # LambdaRank: per-query gradient norms
 
         for batch_qids, batch_feats, batch_labels in train_loader:
 
@@ -129,6 +130,7 @@ def train(
 
                     with torch.no_grad():
                         lambdas = lambda_gradients(scores, labels, k=k)
+                        epoch_lambda_norms.append(lambdas.norm().item())
 
                     scores.backward(lambdas)
                     optimizer.step()
@@ -157,13 +159,20 @@ def train(
                     epoch_losses.append(avg_loss.item())
 
         train_loss = np.mean(epoch_losses) if epoch_losses else 0.0
-        train_loss_history.append(float(train_loss))
+        avg_lambda_norm = np.mean(epoch_lambda_norms) if epoch_lambda_norms else 0.0
 
         # ──────────────────── VALIDATION PHASE (Fix #2) ───────────────────
         model.eval()
         train_ndcg = mean_ndcg(model, train_loader, k_list=(k,), device=device)[k]
         val_ndcg = mean_ndcg(model, val_loader, k_list=(k,), device=device)[k]
         val_ndcg_history.append(val_ndcg)
+
+        # For LambdaRank: store train NDCG in history (no meaningful loss exists).
+        # For Pointwise / RankNet: store train loss as usual.
+        if mode == "lambdarank":
+            train_loss_history.append(float(train_ndcg))
+        else:
+            train_loss_history.append(float(train_loss))
 
         improved = val_ndcg > best_val_ndcg
         if improved:
@@ -175,12 +184,20 @@ def train(
 
         if verbose:
             marker = "  ← best" if improved else ""
-            print(
-                f"Epoch {epoch + 1:02d}/{epochs} | "
-                f"Train Loss: {train_loss:.4f} | "
-                f"Train NDCG@{k}: {train_ndcg:.4f} | "
-                f"Val NDCG@{k}: {val_ndcg:.4f}{marker}"
-            )
+            if mode == "lambdarank":
+                print(
+                    f"Epoch {epoch + 1:02d}/{epochs} | "
+                    f"Avg λ Norm: {avg_lambda_norm:.4f} | "
+                    f"Train NDCG@{k}: {train_ndcg:.4f} | "
+                    f"Val NDCG@{k}: {val_ndcg:.4f}{marker}"
+                )
+            else:
+                print(
+                    f"Epoch {epoch + 1:02d}/{epochs} | "
+                    f"Train Loss: {train_loss:.4f} | "
+                    f"Train NDCG@{k}: {train_ndcg:.4f} | "
+                    f"Val NDCG@{k}: {val_ndcg:.4f}{marker}"
+                )
 
         # ── Early stopping ─────────────────────────────────────────────────
         if patience > 0 and epochs_no_improve >= patience:
