@@ -88,10 +88,10 @@ def train(
     verbose      : Print per-epoch metrics when True.
 
     -------
-    (best_model, last_model, train_loss_history, val_ndcg_history)
+    (best_model, last_model, train_ndcg_history, val_ndcg_history)
         ``best_model``          — model restored to best-val-NDCG@k weights.
         ``last_model``          — model with weights from the final training epoch.
-        ``train_loss_history``  — list of average training loss values per epoch.
+        ``train_ndcg_history``  — list of train NDCG@k values per epoch (all modes).
         ``val_ndcg_history``    — list of val NDCG@k values, one per epoch.
     """
     _VALID_MODES = ("pointwise", "ranknet", "lambdarank")
@@ -103,7 +103,7 @@ def train(
 
     best_val_ndcg: float = -1.0
     best_weights = None
-    train_loss_history: List[float] = []
+    train_ndcg_history: List[float] = []
     val_ndcg_history: List[float] = []
     epochs_no_improve: int = 0
 
@@ -167,12 +167,9 @@ def train(
         val_ndcg = mean_ndcg(model, val_loader, k_list=(k,), device=device)[k]
         val_ndcg_history.append(val_ndcg)
 
-        # For LambdaRank: store train NDCG in history (no meaningful loss exists).
-        # For Pointwise / RankNet: store train loss as usual.
-        if mode == "lambdarank":
-            train_loss_history.append(float(train_ndcg))
-        else:
-            train_loss_history.append(float(train_loss))
+        # All modes: store train NDCG in history.
+        # (Train loss is still printed for Pointwise/RankNet but not returned.)
+        train_ndcg_history.append(float(train_ndcg))
 
         improved = val_ndcg > best_val_ndcg
         if improved:
@@ -215,7 +212,7 @@ def train(
     if best_weights is not None:
         model.load_state_dict(best_weights)
 
-    return model, last_model, train_loss_history, val_ndcg_history
+    return model, last_model, train_ndcg_history, val_ndcg_history
 
 
 # ─────────────────────────────────────────────────────────────────────────────
