@@ -9,9 +9,8 @@ The MSLR-WEB10K dataset uses the libsvm format:
 
 Preprocessing applied:
   1. Drop 25 highly-correlated features identified in the EDA notebook.
-  2. Global z-score normalization using the TRAINING set's mean and std.
-     The same mean/std computed from train.txt is applied to vali.txt and
-     test.txt. This prevents data leakage from val/test into the scaler.
+  12. Per-query z-score normalization. Each query's features are normalized
+     to mean 0 and std 1 individually. Constant features are left at 0.
 
 Each DataLoader item is a tuple: (qid, features_tensor, labels_tensor),
 where features_tensor is (num_docs, 111) and labels_tensor is (num_docs,).
@@ -48,18 +47,10 @@ class MSLRQueryDataset(Dataset):
     ----------
     filepath : str
         Absolute or relative path to train.txt, vali.txt, or test.txt.
-    mean : np.ndarray or None
-        Global mean (shape: [111,]) computed from the training set.
-        If None, the mean is computed from this file itself (used for train).
-    std : np.ndarray or None
-        Global std (shape: [111,]) computed from the training set.
-        If None, the std is computed from this file itself (used for train).
     """
 
-    def __init__(self, filepath: str, mean=None, std=None) -> None:
+    def __init__(self, filepath: str) -> None:
         self.queries = []
-        self.mean = mean
-        self.std = std
         self._load(filepath)
 
     def _load(self, filepath: str) -> None:
@@ -98,23 +89,23 @@ class MSLRQueryDataset(Dataset):
 
         # Flush the last query in the file
         if current_qid is not None and current_labels:
-            all_raw_docs.extend(current_features)
             self.queries.append((current_qid, current_features, current_labels))
 
-        # ── Compute or accept mean/std ────────────────────────────────────────
-        all_raw_docs = np.array(all_raw_docs, dtype=np.float32)  # (N_docs, 111)
-
-        if self.mean is None or self.std is None:
-            # Training split: compute stats from this file
-            self.mean = all_raw_docs.mean(axis=0)   # (111,)
-            self.std  = all_raw_docs.std(axis=0)    # (111,)
-            self.std[self.std == 0.0] = 1.0         # avoid div-by-zero for constant features
-
-        # ── Normalize and convert to tensors ─────────────────────────────────
+        # ── Apply Per-Query Normalization ────────────────────────────────────
         normalized = []
         for qid, feats, labels in self.queries:
             feat_array = np.array(feats, dtype=np.float32)          # (num_docs, 111)
-            feat_array = (feat_array - self.mean) / self.std        # apply global stats
+
+            # Compute stats per query
+            q_mean = feat_array.mean(axis=0)
+            q_std  = feat_array.std(axis=0)
+            
+            # Avoid division by zero for constant features
+            q_std[q_std == 0.0] = 1.0
+
+            # Apply per-query normalization
+            feat_array = (feat_array - q_mean) / q_std
+
             normalized.append((
                 qid,
                 torch.tensor(feat_array, dtype=torch.float32),
@@ -149,8 +140,7 @@ def load_fold(
     """
     Load Train, Validation, and Test DataLoaders for a given MSLR fold.
 
-    Normalization is fit on the training split only. The same mean/std
-    are then applied to the val and test splits.
+    Normalization is applied per-query independently across all splits.
 
     Parameters
     ----------
@@ -167,16 +157,16 @@ def load_fold(
     """
     fold_dir = os.path.join(base_path, f"Fold{fold_num}")
 
-    # Step 1: Load training data — mean/std are computed here
-    print(f"  [Fold {fold_num}] Loading train split and computing normalization stats...")
-    train_ds = MSLRQueryDataset(os.path.join(fold_dir, "train.txt"), mean=None, std=None)
+    # Step 1: Load training data
+    print(f"  [Fold {fold_num}] Loading train split...")
+    train_ds = MSLRQueryDataset(os.path.join(fold_dir, "train.txt"))
 
-    # Step 2: Load val and test using the TRAIN mean/std
-    print(f"  [Fold {fold_num}] Loading val split (using train stats)...")
-    val_ds   = MSLRQueryDataset(os.path.join(fold_dir, "vali.txt"), mean=train_ds.mean, std=train_ds.std)
+    # Step 2: Load val and test
+    print(f"  [Fold {fold_num}] Loading val split...")
+    val_ds   = MSLRQueryDataset(os.path.join(fold_dir, "vali.txt"))
 
-    print(f"  [Fold {fold_num}] Loading test split (using train stats)...")
-    test_ds  = MSLRQueryDataset(os.path.join(fold_dir, "test.txt"), mean=train_ds.mean, std=train_ds.std)
+    print(f"  [Fold {fold_num}] Loading test split...")
+    test_ds  = MSLRQueryDataset(os.path.join(fold_dir, "test.txt"))
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,  collate_fn=_collate_fn)
     val_loader   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False, collate_fn=_collate_fn)
@@ -184,6 +174,6 @@ def load_fold(
 
     print(f"  Fold {fold_num}: {len(train_ds)} train | {len(val_ds)} val | {len(test_ds)} test queries")
     print(f"  Features: {NUM_FEATURES} (136 total − 25 dropped)")
-    print(f"  Normalization: global z-score fit on train (mean/std shapes: {train_ds.mean.shape})")
+    print(f"  Normalization: Per-query z-score")
 
     return train_loader, val_loader, test_loader

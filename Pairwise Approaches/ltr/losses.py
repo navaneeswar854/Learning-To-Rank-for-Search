@@ -41,14 +41,14 @@ def pointwise_mse(scores: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
 # Pairwise (RankNet)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def ranknet_loss(scores: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+def ranknet_loss(scores: torch.Tensor, labels: torch.Tensor, sigma: float = 1.0) -> torch.Tensor:
     """
     Pairwise RankNet loss using Binary Cross-Entropy on (i > j) pairs.
 
     For each valid pair where ``label_i > label_j``:
 
-        P_ij = σ(s_i − s_j)
-        L    = −log P_ij  =  BCE(s_i − s_j,  target=1)
+        P_ij = σ(sigma * (s_i − s_j))
+        L    = −log P_ij  =  BCE(sigma * (s_i − s_j),  target=1)
 
     The loss is averaged over all valid pairs in the query group.
     Returns a zero-gradient placeholder tensor if no valid pairs exist
@@ -58,6 +58,7 @@ def ranknet_loss(scores: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     ----------
     scores : torch.Tensor, shape (num_docs, 1)
     labels : torch.Tensor, shape (num_docs,)
+    sigma  : float, scaling parameter for the score differences.
 
     Returns
     -------
@@ -78,7 +79,7 @@ def ranknet_loss(scores: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         # No valid pairs — return differentiable zero
         return torch.tensor(0.0, device=scores.device, requires_grad=True)
 
-    valid_diffs = scores_diff[i_idx, j_idx]
+    valid_diffs = scores_diff[i_idx, j_idx] * sigma
     targets = torch.ones_like(valid_diffs)
 
     return F.binary_cross_entropy_with_logits(valid_diffs, targets)
