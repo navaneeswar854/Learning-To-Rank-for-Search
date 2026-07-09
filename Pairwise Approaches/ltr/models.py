@@ -37,7 +37,7 @@ class ScoringMLP(nn.Module):
         Hidden layer sizes in order. An empty list produces a pure linear
         model (no hidden layers, no activations).
     dropout : float
-        Dropout probability applied **after each hidden layer's ReLU**.
+        Dropout probability applied **after each hidden layer's ELU**.
         Set to 0.0 to disable dropout entirely.
 
     Examples
@@ -62,7 +62,8 @@ class ScoringMLP(nn.Module):
 
         for dim in hidden_dims:
             layers.append(nn.Linear(prev_dim, dim))
-            layers.append(nn.ReLU())
+            layers.append(nn.BatchNorm1d(dim))
+            layers.append(nn.ELU())
             if dropout > 0.0:
                 layers.append(nn.Dropout(p=dropout))
             prev_dim = dim
