@@ -225,8 +225,8 @@ class LambdaMART:
                 lambdas, hessians = lambda_gradients_and_hessians(scores, labels, k=self.k)
                 
                 all_feats.append(train_feats_dict[qid])
-                all_lambdas.append(lambdas.numpy().squeeze())
-                all_hessians.append(hessians.numpy().squeeze())
+                all_lambdas.append(lambdas.numpy().reshape(-1))
+                all_hessians.append(hessians.numpy().reshape(-1))
                 
             X = np.vstack(all_feats)
             lambdas = np.concatenate(all_lambdas)
