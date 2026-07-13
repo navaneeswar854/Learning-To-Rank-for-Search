@@ -260,11 +260,12 @@ class LambdaMART:
                 alpha = self._optimal_line_search(
                     all_train_qids, train_scores_dict, tree_preds_dict, train_labels_dict
                 )
+                # Effective step = shrinkage * optimal_alpha
+                effective_alpha = self.learning_rate * alpha
             else:
-                alpha = self.learning_rate
-                
-            # Effective step = shrinkage * optimal_alpha
-            effective_alpha = self.learning_rate * alpha
+                # Fixed learning rate mode: learning_rate IS the step directly
+                alpha = 1.0
+                effective_alpha = self.learning_rate
             self.trees.append(tree)
             self.alphas.append(effective_alpha)
             

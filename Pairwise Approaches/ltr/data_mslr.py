@@ -47,10 +47,15 @@ class MSLRQueryDataset(Dataset):
     ----------
     filepath : str
         Absolute or relative path to train.txt, vali.txt, or test.txt.
+    normalize : bool
+        If True (default), apply per-query z-score normalization.
+        Set to False for tree-based models (e.g. LambdaMART) that are
+        scale-invariant and process documents across all queries jointly.
     """
 
-    def __init__(self, filepath: str) -> None:
+    def __init__(self, filepath: str, normalize: bool = True) -> None:
         self.queries = []
+        self.normalize = normalize
         self._load(filepath)
 
     def _load(self, filepath: str) -> None:
@@ -91,20 +96,16 @@ class MSLRQueryDataset(Dataset):
         if current_qid is not None and current_labels:
             self.queries.append((current_qid, current_features, current_labels))
 
-        # ── Apply Per-Query Normalization ────────────────────────────────────
+        # ── Optionally apply per-query normalization ─────────────────────────────────
         normalized = []
         for qid, feats, labels in self.queries:
             feat_array = np.array(feats, dtype=np.float32)          # (num_docs, 111)
 
-            # Compute stats per query
-            q_mean = feat_array.mean(axis=0)
-            q_std  = feat_array.std(axis=0)
-            
-            # Avoid division by zero for constant features
-            q_std[q_std == 0.0] = 1.0
-
-            # Apply per-query normalization
-            feat_array = (feat_array - q_mean) / q_std
+            if self.normalize:
+                q_mean = feat_array.mean(axis=0)
+                q_std  = feat_array.std(axis=0)
+                q_std[q_std == 0.0] = 1.0
+                feat_array = (feat_array - q_mean) / q_std
 
             normalized.append((
                 qid,
@@ -136,6 +137,7 @@ def load_fold(
     base_path: str = "/content/MSLR-WEB10K",
     fold_num: int = 1,
     batch_size: int = 4,
+    normalize: bool = True,
 ):
     """
     Load Train, Validation, and Test DataLoaders for a given MSLR fold.
@@ -159,14 +161,13 @@ def load_fold(
 
     # Step 1: Load training data
     print(f"  [Fold {fold_num}] Loading train split...")
-    train_ds = MSLRQueryDataset(os.path.join(fold_dir, "train.txt"))
+    train_ds = MSLRQueryDataset(os.path.join(fold_dir, "train.txt"), normalize=normalize)
 
-    # Step 2: Load val and test
     print(f"  [Fold {fold_num}] Loading val split...")
-    val_ds   = MSLRQueryDataset(os.path.join(fold_dir, "vali.txt"))
+    val_ds   = MSLRQueryDataset(os.path.join(fold_dir, "vali.txt"), normalize=normalize)
 
     print(f"  [Fold {fold_num}] Loading test split...")
-    test_ds  = MSLRQueryDataset(os.path.join(fold_dir, "test.txt"))
+    test_ds  = MSLRQueryDataset(os.path.join(fold_dir, "test.txt"), normalize=normalize)
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,  collate_fn=_collate_fn)
     val_loader   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False, collate_fn=_collate_fn)
