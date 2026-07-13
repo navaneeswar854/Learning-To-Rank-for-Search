@@ -90,6 +90,10 @@ def ndcg_at_k(
     true_labels = np.asarray(true_labels, dtype=np.float64)
     pred_scores = np.asarray(pred_scores, dtype=np.float64)
 
+    # Single-document queries: nothing to rank, assign perfect score
+    if len(true_labels) == 1:
+        return 1.0
+
     idcg = compute_dcg(sorted(true_labels, reverse=True), k)
 
     if idcg == 0.0:
