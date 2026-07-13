@@ -7,6 +7,7 @@ step size (alpha) that maximizes NDCG at each iteration, natively handling degen
 via score jittering.
 """
 
+import copy
 import numpy as np
 import torch
 from sklearn.tree import DecisionTreeRegressor
@@ -206,6 +207,9 @@ class LambdaMART:
                 train_scores_dict[qkey] = np.zeros(len(labels))
                 
         val_ndcg_history = []
+        train_ndcg_history = []
+        best_trees = []
+        best_alphas = []
                 
         for iteration in range(self.n_estimators):
             
@@ -268,7 +272,16 @@ class LambdaMART:
             for qid in all_train_qids:
                 train_scores_dict[qid] += effective_alpha * tree_preds_dict[qid]
                 
-            # 5. Validation and Early Stopping
+            # 5. Train NDCG (computed directly from current scores dict)
+            train_ndcgs = []
+            for qid in all_train_qids:
+                scores_q = train_scores_dict[qid]
+                labels_q = train_labels_dict[qid]
+                train_ndcgs.append(ndcg_at_k(labels_q, scores_q, self.k))
+            train_ndcg = float(np.mean(train_ndcgs))
+            train_ndcg_history.append(train_ndcg)
+
+            # 6. Validation and Early Stopping
             val_ndcg = mean_ndcg(self, val_loader, k_list=(self.k,), device=device)[self.k]
             val_ndcg_history.append(val_ndcg)
             
@@ -276,25 +289,35 @@ class LambdaMART:
             if improved:
                 best_val_ndcg = val_ndcg
                 best_iteration = iteration
+                best_trees  = copy.deepcopy(self.trees)
+                best_alphas = copy.deepcopy(self.alphas)
                 epochs_no_improve = 0
             else:
                 epochs_no_improve += 1
                 
             if verbose:
                 marker = "  <- best" if improved else ""
-                print(f"Tree {iteration+1:03d} | α*: {alpha:.4f} | η·α*: {effective_alpha:.4f} | Val NDCG@{self.k}: {val_ndcg:.4f}{marker}")
+                print(
+                    f"Tree {iteration+1:03d} | "
+                    f"α*: {alpha:.4f} | η·α*: {effective_alpha:.4f} | "
+                    f"Train NDCG@{self.k}: {train_ndcg:.4f} | "
+                    f"Val NDCG@{self.k}: {val_ndcg:.4f}{marker}"
+                )
                 
             if self.patience > 0 and epochs_no_improve >= self.patience:
                 if verbose:
                     print(f"Early stopping at tree {iteration+1} (no improvement for {self.patience} trees).")
                 break
                 
-        # Truncate trees to best iteration
-        if best_iteration + 1 < len(self.trees):
-            self.trees = self.trees[:best_iteration + 1]
-            self.alphas = self.alphas[:best_iteration + 1]
-            
-        return self, val_ndcg_history
+        # Save last model (full ensemble before truncation)
+        last_model = copy.deepcopy(self)
+
+        # Restore best model weights into self
+        if best_trees:
+            self.trees  = best_trees
+            self.alphas = best_alphas
+
+        return self, last_model, train_ndcg_history, val_ndcg_history
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Sum of all trees scaled by their alpha."""
