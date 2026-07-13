@@ -28,7 +28,7 @@ class LambdaMART:
     def __init__(
         self,
         n_estimators: int = 1000,
-        learning_rate: float = 0.1,  # Fallback if line search fails or is disabled
+        learning_rate: float = 0.1,  # Shrinkage factor applied to every update (η)
         max_depth: int = 6,
         min_samples_leaf: int = 20,
         k: int = 10,
@@ -259,12 +259,14 @@ class LambdaMART:
             else:
                 alpha = self.learning_rate
                 
+            # Effective step = shrinkage * optimal_alpha
+            effective_alpha = self.learning_rate * alpha
             self.trees.append(tree)
-            self.alphas.append(alpha)
+            self.alphas.append(effective_alpha)
             
             # 4. Update scores
             for qid in all_train_qids:
-                train_scores_dict[qid] += alpha * tree_preds_dict[qid]
+                train_scores_dict[qid] += effective_alpha * tree_preds_dict[qid]
                 
             # 5. Validation and Early Stopping
             val_ndcg = mean_ndcg(self, val_loader, k_list=(self.k,), device=device)[self.k]
@@ -280,7 +282,7 @@ class LambdaMART:
                 
             if verbose:
                 marker = "  <- best" if improved else ""
-                print(f"Tree {iteration+1:03d} | alpha: {alpha:.4f} | Val NDCG@{self.k}: {val_ndcg:.4f}{marker}")
+                print(f"Tree {iteration+1:03d} | α*: {alpha:.4f} | η·α*: {effective_alpha:.4f} | Val NDCG@{self.k}: {val_ndcg:.4f}{marker}")
                 
             if self.patience > 0 and epochs_no_improve >= self.patience:
                 if verbose:
