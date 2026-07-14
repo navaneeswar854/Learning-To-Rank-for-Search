@@ -181,10 +181,9 @@ class LambdaMART:
                 max_ndcg = current_mean_ndcg
                 best_alpha = alpha
                 
-        # If no alpha improved NDCG, fallback — return 1.0 so that
-        # effective_alpha = learning_rate * 1.0 = learning_rate (no squaring)
+        # If no alpha improved NDCG, fallback to the learning rate
         if best_alpha == 0.0:
-            best_alpha = 1.0
+            best_alpha = self.learning_rate
             
         return best_alpha
 
