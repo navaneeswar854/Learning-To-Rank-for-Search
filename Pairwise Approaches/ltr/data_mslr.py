@@ -53,9 +53,10 @@ class MSLRQueryDataset(Dataset):
         scale-invariant and process documents across all queries jointly.
     """
 
-    def __init__(self, filepath: str, normalize: bool = True) -> None:
+    def __init__(self, filepath: str, normalize: bool = True, max_queries: int = None) -> None:
         self.queries = []
         self.normalize = normalize
+        self.max_queries = max_queries
         self._load(filepath)
 
     def _load(self, filepath: str) -> None:
@@ -85,6 +86,8 @@ class MSLRQueryDataset(Dataset):
                     if current_labels:
                         all_raw_docs.extend(current_features)
                         self.queries.append((current_qid, current_features, current_labels))
+                        if self.max_queries is not None and len(self.queries) >= self.max_queries:
+                            break
                     current_features = []
                     current_labels = []
 
@@ -138,6 +141,9 @@ def load_fold(
     fold_num: int = 1,
     batch_size: int = 4,
     normalize: bool = True,
+    num_train_queries: int = None,
+    num_val_queries: int = None,
+    num_test_queries: int = None,
 ):
     """
     Load Train, Validation, and Test DataLoaders for a given MSLR fold.
@@ -161,13 +167,13 @@ def load_fold(
 
     # Step 1: Load training data
     print(f"  [Fold {fold_num}] Loading train split...")
-    train_ds = MSLRQueryDataset(os.path.join(fold_dir, "train.txt"), normalize=normalize)
+    train_ds = MSLRQueryDataset(os.path.join(fold_dir, "train.txt"), normalize=normalize, max_queries=num_train_queries)
 
     print(f"  [Fold {fold_num}] Loading val split...")
-    val_ds   = MSLRQueryDataset(os.path.join(fold_dir, "vali.txt"), normalize=normalize)
+    val_ds   = MSLRQueryDataset(os.path.join(fold_dir, "vali.txt"), normalize=normalize, max_queries=num_val_queries)
 
     print(f"  [Fold {fold_num}] Loading test split...")
-    test_ds  = MSLRQueryDataset(os.path.join(fold_dir, "test.txt"), normalize=normalize)
+    test_ds  = MSLRQueryDataset(os.path.join(fold_dir, "test.txt"), normalize=normalize, max_queries=num_test_queries)
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,  collate_fn=_collate_fn)
     val_loader   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False, collate_fn=_collate_fn)
