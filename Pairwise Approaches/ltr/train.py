@@ -312,7 +312,7 @@ def train_lambdamart_multiseed(
         set_seed(seed)
         model = model_fn()
 
-        trained_model, _ = model.fit(
+        trained_model, _, _, _ = model.fit(
             train_loader=train_loader, 
             val_loader=val_loader,
             device=device, 
