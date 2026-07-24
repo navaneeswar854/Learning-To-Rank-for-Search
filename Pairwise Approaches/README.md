@@ -1,6 +1,6 @@
-# Pairwise Approaches — Learning to Rank on MQ2008
+# Learning to Rank — MQ2008 (Phase 2) and MSLR-WEB10K (Phase 3)
 
-A structured study of **pairwise and listwise Learning-to-Rank (LTR)** algorithms, evaluated on the [MQ2008](https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/) benchmark dataset.
+A structured study of **pairwise and listwise Learning-to-Rank (LTR)** algorithms, evaluated on the [MQ2008](https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/) (Phase 2) and [MSLR-WEB10K](https://www.microsoft.com/en-us/research/project/mslr/) (Phase 3) benchmark datasets.
 
 Each notebook is a self-contained experiment. They share a common `ltr/` library so there is no repeated boilerplate. A final comparison notebook benchmarks all methods head-to-head.
 
@@ -66,33 +66,44 @@ Run in order — each builds on the conceptual foundation of the previous one.
 ## Project Structure
 
 ```
-Pairwise Approaches/
+Learning to Rank/
 │
 ├── README.md
 ├── pyproject.toml                  ← Package config (pip install -e .)
 │
-├── ltr/                            ← Shared utility library (flattened from src/ltr/)
+├── ltr/                            ← Shared utility library
 │   ├── __init__.py
 │   ├── data.py                     ← LETOR data loader & fold splitter
-│   ├── evaluate.py                 ← NDCG@k evaluation helpers
+│   ├── data_mslr.py                ← MSLR-WEB10K data loader
+│   ├── evaluate.py                 ← Cross-fold evaluation helpers
 │   ├── lambdamart.py               ← LambdaMART implementation (GB trees)
 │   ├── losses.py                   ← Pairwise loss functions (RankNet, Lambda)
 │   ├── metrics.py                  ← NDCG, DCG, ranking metrics
 │   ├── models.py                   ← Neural scoring model definition
 │   └── train.py                    ← Training loop with fold cross-validation
 │
-├── notebooks/
+├── notebooks/                      ← Phase 2: MQ2008 experiments
 │   ├── 01_pointwise.ipynb
 │   ├── 02_ranknet.ipynb
 │   ├── 03_lambdarank.ipynb
-│   ├── comparison.ipynb
+│   ├── 04_lambdamart.ipynb
+│   └── comparison.ipynb
+│
+├── notebooks_mslr/                 ← Phase 3: MSLR-WEB10K experiments
+│   ├── MSLR.ipynb                  ← EDA and feature analysis
+│   ├── 01_ranknet.ipynb
+│   ├── 02_pointwise.ipynb
+│   ├── 03_lambdarank.ipynb
 │   └── 04_lambdamart.ipynb
 │
-└── ltr_results/                    ← Saved evaluation results (JSON)
-    ├── pointwise_results.json
-    ├── ranknet_results.json
-    ├── lambdarank_results.json
-    └── lambdamart_results.json
+├── ltr_results/                    ← Phase 2 results (JSON)
+│   ├── pointwise_results.json
+│   ├── ranknet_results.json
+│   ├── lambdarank_results.json
+│   └── lambdamart_results.json
+│
+└── ltr_results_mslr/               ← Phase 3 results (JSON)
+    └── pointwise_results.json
 ```
 
 ---

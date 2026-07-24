@@ -1,4 +1,4 @@
-# Week 2 — Information Retrieval Algorithms on SciFact
+# Phase 1 — Classical IR Algorithms on SciFact
 
 A structured study of classical and neural **Information Retrieval (IR)** algorithms, applied to the [SciFact](https://huggingface.co/datasets/allenai/scifact) benchmark dataset.
 
@@ -49,7 +49,7 @@ See [`results/leaderboard.md`](results/leaderboard.md) for the full breakdown.
 ## Project Structure
 
 ```
-week2/
+Classic IR/
 │
 ├── README.md
 ├── requirements.txt
