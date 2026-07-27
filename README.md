@@ -8,7 +8,7 @@ An end-to-end study of **Learning to Rank (LTR)** algorithms, from classical IR 
 
 This repository is split into two self-contained phases:
 
-### Phase 1 — Classical IR on SciFact → [`Classic IR/`](Classic%20IR/)
+### Phase 1 — Classical IR on SciFact → [`Phase1_Classical_IR/`](Phase1_Classical_IR/)
 
 Classical, non-trained information retrieval algorithms evaluated on the **SciFact** scientific claim retrieval benchmark.
 
@@ -21,7 +21,7 @@ Classical, non-trained information retrieval algorithms evaluated on the **SciFa
 | BM25 (tuned k₁=0.8, b=0.9) | 0.641 |
 | **VSM + Transformer Embeddings** | **0.656** |
 
-📂 See [`Classic IR/README.md`](Classic%20IR/README.md) for full details.
+📂 See [`Phase1_Classical_IR/README.md`](Phase1_Classical_IR/README.md) for full details and [`Phase1_Classical_IR/RESULTS.md`](Phase1_Classical_IR/RESULTS.md) for the final leaderboard and key takeaways.
 
 ---
 
@@ -68,8 +68,9 @@ Learning-To-Rank-for-Search/
 │
 ├── README.md                   ← You are here
 │
-├── Classic IR/                 ← Phase 1: Classical IR on SciFact
+├── Phase1_Classical_IR/        ← Phase 1: Classical IR on SciFact
 │   ├── README.md
+│   ├── RESULTS.md
 │   ├── requirements.txt
 │   ├── Dataset/scifact/
 │   ├── notebooks/
@@ -94,7 +95,7 @@ Each phase has its own `README.md` with setup instructions. In general:
 
 ```bash
 # Phase 1 — Classical IR
-cd "Classic IR"
+cd Phase1_Classical_IR
 pip install -r requirements.txt
 jupyter notebook notebooks/01_TF-IDFvsBM25.ipynb
 
