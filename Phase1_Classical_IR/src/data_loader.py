@@ -15,10 +15,10 @@ import re
 
 
 # ── Default file paths (relative to notebook working directory) ─────────────
-_CORPUS_PATH      = "../Dataset/scifact/corpus.jsonl"
-_QUERIES_PATH     = "../Dataset/scifact/queries.jsonl"
-_QRELS_TRAIN_PATH = "../Dataset/scifact/qrels/train.tsv"
-_QRELS_TEST_PATH  = "../Dataset/scifact/qrels/test.tsv"
+_CORPUS_PATH      = "../Dataset/corpus.jsonl"
+_QUERIES_PATH     = "../Dataset/queries.jsonl"
+_QRELS_TRAIN_PATH = "../Dataset/qrels/train.tsv"
+_QRELS_TEST_PATH  = "../Dataset/qrels/test.tsv"
 
 
 def load_corpus(path: str = _CORPUS_PATH) -> dict:

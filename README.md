@@ -72,7 +72,7 @@ Learning-To-Rank-for-Search/
 │   ├── README.md
 │   ├── RESULTS.md
 │   ├── requirements.txt
-│   ├── Dataset/scifact/
+│   ├── Dataset/                    ← SciFact files (corpus, queries, qrels)
 │   ├── notebooks/
 │   ├── src/
 │   └── results/

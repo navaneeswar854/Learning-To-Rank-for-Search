@@ -40,9 +40,10 @@ See [**RESULTS.md**](RESULTS.md) for the final leaderboard, performance metrics,
 Phase1_Classical_IR/
 │
 ├── README.md
+├── RESULTS.md
 ├── requirements.txt
 │
-├── scifact/                        ← Dataset (place here before running)
+├── Dataset/                        ← SciFact dataset (place here before running)
 │   ├── corpus.jsonl
 │   ├── queries.jsonl
 │   └── qrels/
@@ -72,11 +73,11 @@ Phase1_Classical_IR/
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Place the SciFact dataset at:
-#    Phase1_Classical_IR/Dataset/scifact/corpus.jsonl
-#    Phase1_Classical_IR/Dataset/scifact/queries.jsonl
-#    Phase1_Classical_IR/Dataset/scifact/qrels/train.tsv
-#    Phase1_Classical_IR/Dataset/scifact/qrels/test.tsv
+# 2. Place the SciFact dataset files at:
+#    Phase1_Classical_IR/Dataset/corpus.jsonl
+#    Phase1_Classical_IR/Dataset/queries.jsonl
+#    Phase1_Classical_IR/Dataset/qrels/train.tsv
+#    Phase1_Classical_IR/Dataset/qrels/test.tsv
 
 # 3. Open any notebook and run all cells
 jupyter notebook notebooks/01_TF-IDFvsBM25.ipynb
