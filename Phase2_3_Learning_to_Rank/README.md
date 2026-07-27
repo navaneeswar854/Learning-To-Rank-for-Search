@@ -66,7 +66,7 @@ Run in order — each builds on the conceptual foundation of the previous one.
 ## Project Structure
 
 ```
-Learning to Rank/
+Phase2_3_Learning_to_Rank/
 │
 ├── README.md
 ├── pyproject.toml                  ← Package config (pip install -e .)

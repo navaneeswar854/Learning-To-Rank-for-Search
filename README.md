@@ -25,7 +25,7 @@ Classical, non-trained information retrieval algorithms evaluated on the **SciFa
 
 ---
 
-### Phase 2 & 3 — Learning to Rank on MQ2008 & MSLR-WEB10K → [`Learning to Rank/`](Learning%20to%20Rank/)
+### Phase 2 & 3 — Learning to Rank on MQ2008 & MSLR-WEB10K → [`Phase2_3_Learning_to_Rank/`](Phase2_3_Learning_to_Rank/)
 
 Supervised LTR models implemented from scratch and evaluated using 5-fold cross-validation.
 
@@ -47,7 +47,7 @@ Supervised LTR models implemented from scratch and evaluated using 5-fold cross-
 | **LambdaRank** | **0.451** |
 | LambdaMART | TBD |
 
-📂 See [`Learning to Rank/README.md`](Learning%20to%20Rank/README.md) for full details.
+📂 See [`Phase2_3_Learning_to_Rank/README.md`](Phase2_3_Learning_to_Rank/README.md) for full details.
 
 ---
 
@@ -77,7 +77,7 @@ Learning-To-Rank-for-Search/
 │   ├── src/
 │   └── results/
 │
-└── Learning to Rank/           ← Phase 2 & 3: LTR on MQ2008 + MSLR-WEB10K
+└── Phase2_3_Learning_to_Rank/  ← Phase 2 & 3: LTR on MQ2008 + MSLR-WEB10K
     ├── README.md
     ├── pyproject.toml
     ├── ltr/                    ← Shared Python library
@@ -100,7 +100,7 @@ pip install -r requirements.txt
 jupyter notebook notebooks/01_TF-IDFvsBM25.ipynb
 
 # Phase 2 & 3 — Learning to Rank
-cd "Learning to Rank"
+cd Phase2_3_Learning_to_Rank
 pip install -e .
 jupyter notebook notebooks/01_pointwise.ipynb
 ```
