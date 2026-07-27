@@ -1,12 +1,16 @@
-# Learning to Rank — MQ2008 (Phase 2) and MSLR-WEB10K (Phase 3)
+# Phase 2 & 3 — Learning to Rank on MQ2008 and MSLR-WEB10K
 
 A structured study of **pairwise and listwise Learning-to-Rank (LTR)** algorithms, evaluated on the [MQ2008](https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/) (Phase 2) and [MSLR-WEB10K](https://www.microsoft.com/en-us/research/project/mslr/) (Phase 3) benchmark datasets.
 
-Each notebook is a self-contained experiment. They share a common `ltr/` library so there is no repeated boilerplate. A final comparison notebook benchmarks all methods head-to-head.
+Each notebook is a self-contained experiment. They share a common `src/` library so there is no repeated boilerplate.
+
+See [**RESULTS.md**](RESULTS.md) for the final leaderboards, per-fold breakdowns, observations, and key takeaways.
 
 ---
 
-## The Dataset: MQ2008 (LETOR 4.0)
+## Datasets
+
+**Phase 2 — MQ2008 (LETOR 4.0)**
 
 | | |
 |--|--|
@@ -16,50 +20,40 @@ Each notebook is a self-contained experiment. They share a common `ltr/` library
 | **Evaluation** | 5-fold cross-validation (Fold1–Fold5) |
 | **Relevance** | Graded judgements (0, 1, 2) |
 
+**Phase 3 — MSLR-WEB10K**
+
+| | |
+|--|--|
+| **Queries** | 10,000 queries |
+| **Features** | 136 relevance features per query-document pair |
+| **Evaluation** | 5-fold cross-validation |
+| **Relevance** | Graded judgements (0–4) |
+
 ---
 
 ## Notebooks
+
+### Phase 2 — MQ2008 (`notebooks_letor/`)
 
 Run in order — each builds on the conceptual foundation of the previous one.
 
 | # | Notebook | Algorithm | Key Idea |
 |---|----------|-----------|----------|
-| 1 | [`01_pointwise`](notebooks/01_pointwise.ipynb) | Pointwise Regression | Treat ranking as regression; predict relevance score per document independently |
-| 2 | [`02_ranknet`](notebooks/02_ranknet.ipynb) | RankNet | Pairwise neural network; minimise cross-entropy loss over document pairs |
-| 3 | [`03_lambdarank`](notebooks/03_lambdarank.ipynb) | LambdaRank | Pairwise gradient trick; weight pair updates by the NDCG change they would cause |
-| 4 | [`comparison`](notebooks/comparison.ipynb) | Full Comparison | Head-to-head benchmark of all four methods across all folds |
-| 5 | [`04_lambdamart`](notebooks/04_lambdamart.ipynb) | LambdaMART | Gradient-boosted trees trained with LambdaRank gradients |
+| 1 | [`01_pointwise`](notebooks_letor/01_pointwise.ipynb) | Pointwise Regression | Treat ranking as regression; predict relevance score per document independently |
+| 2 | [`02_ranknet`](notebooks_letor/02_ranknet.ipynb) | RankNet | Pairwise neural network; minimise cross-entropy loss over document pairs |
+| 3 | [`03_lambdarank`](notebooks_letor/03_lambdarank.ipynb) | LambdaRank | Pairwise gradient trick; weight pair updates by the NDCG change they would cause |
+| 4 | [`04_lambdamart`](notebooks_letor/04_lambdamart.ipynb) | LambdaMART | Gradient-boosted trees trained with LambdaRank gradients |
+| 5 | [`comparison`](notebooks_letor/comparison.ipynb) | Full Comparison | Head-to-head benchmark of all four methods across all folds |
 
----
+### Phase 3 — MSLR-WEB10K (`notebooks_mslr/`)
 
-## Results — NDCG@k (5-fold cross-validation)
-
-> All results are averaged over 5 folds × 3 random seeds. Metric: **NDCG@k** (higher is better).
-
-| Model | NDCG@1 | NDCG@3 | NDCG@5 | NDCG@10 |
-|-------|:------:|:------:|:------:|:-------:|
-| Pointwise | 0.3594 | 0.4016 | 0.4473 | 0.4949 |
-| **RankNet** | **0.3690** | **0.4084** | **0.4526** | **0.4993** |
-| LambdaRank | 0.3641 | 0.4043 | 0.4516 | 0.4974 |
-| LambdaMART | 0.3432 | 0.3898 | 0.4344 | 0.4846 |
-
-**Best overall: RankNet** edges ahead at every NDCG cutoff, with LambdaRank close behind. LambdaMART, despite being a more powerful model class, underperforms on MQ2008 — likely due to dataset size (784 queries) and the near-absence of tie-breaking variation in some folds.
-
-### Per-Fold Breakdown (NDCG@10)
-
-| Fold | Pointwise | RankNet | LambdaRank | LambdaMART |
-|------|:---------:|:-------:|:----------:|:----------:|
-| 1 | 0.4771 | 0.4720 | 0.4726 | 0.4682 |
-| 2 | 0.4467 | 0.4506 | 0.4478 | 0.4411 |
-| 3 | 0.4805 | 0.4789 | 0.4887 | 0.4558 |
-| 4 | 0.5425 | 0.5508 | 0.5461 | 0.5268 |
-| 5 | 0.5280 | 0.5442 | 0.5319 | 0.5312 |
-
-**Observations:**
-- Folds 4 and 5 are noticeably better than 1, 2, and 3 across all models — NDCG@10 jumps from ~0.44–0.49 in the first three folds to ~0.52–0.55 in the last two.
-- LambdaMART shows **near-zero variance for Fold 2** — the training data may not contain tie-breaking variation, so the seed has no effect on tree splits.
-- The expected trend **LambdaRank ≥ RankNet ≥ Pointwise** does not hold — LambdaRank couldn't beat RankNet due to noise and fewer relevant documents. The difference remains minimal.
-- LambdaMART saturates quickly (best validation NDCG often reached by the 3rd tree iteration), suggesting the dataset is small enough that gradient boosting overfits early.
+| # | Notebook | Algorithm |
+|---|----------|-----------|
+| 0 | [`MSLR`](notebooks_mslr/MSLR.ipynb) | EDA and feature analysis |
+| 1 | [`01_ranknet`](notebooks_mslr/01_ranknet.ipynb) | RankNet |
+| 2 | [`02_pointwise`](notebooks_mslr/02_pointwise.ipynb) | Pointwise Regression |
+| 3 | [`03_lambdarank`](notebooks_mslr/03_lambdarank.ipynb) | LambdaRank |
+| 4 | [`04_lambdamart`](notebooks_mslr/04_lambdamart.ipynb) | LambdaMART |
 
 ---
 
@@ -69,9 +63,10 @@ Run in order — each builds on the conceptual foundation of the previous one.
 Phase2_3_Learning_to_Rank/
 │
 ├── README.md
+├── RESULTS.md                      ← Results tables, observations, key takeaways
 ├── pyproject.toml                  ← Package config (pip install -e .)
 │
-├── ltr/                            ← Shared utility library
+├── src/                            ← Shared utility library
 │   ├── __init__.py
 │   ├── data.py                     ← LETOR data loader & fold splitter
 │   ├── data_mslr.py                ← MSLR-WEB10K data loader
@@ -82,28 +77,19 @@ Phase2_3_Learning_to_Rank/
 │   ├── models.py                   ← Neural scoring model definition
 │   └── train.py                    ← Training loop with fold cross-validation
 │
-├── notebooks/                      ← Phase 2: MQ2008 experiments
+├── notebooks_letor/                ← Phase 2: MQ2008 experiments
 │   ├── 01_pointwise.ipynb
 │   ├── 02_ranknet.ipynb
 │   ├── 03_lambdarank.ipynb
 │   ├── 04_lambdamart.ipynb
 │   └── comparison.ipynb
 │
-├── notebooks_mslr/                 ← Phase 3: MSLR-WEB10K experiments
-│   ├── MSLR.ipynb                  ← EDA and feature analysis
-│   ├── 01_ranknet.ipynb
-│   ├── 02_pointwise.ipynb
-│   ├── 03_lambdarank.ipynb
-│   └── 04_lambdamart.ipynb
-│
-├── ltr_results/                    ← Phase 2 results (JSON)
-│   ├── pointwise_results.json
-│   ├── ranknet_results.json
-│   ├── lambdarank_results.json
-│   └── lambdamart_results.json
-│
-└── ltr_results_mslr/               ← Phase 3 results (JSON)
-    └── pointwise_results.json
+└── notebooks_mslr/                 ← Phase 3: MSLR-WEB10K experiments
+    ├── MSLR.ipynb                  ← EDA and feature analysis
+    ├── 01_ranknet.ipynb
+    ├── 02_pointwise.ipynb
+    ├── 03_lambdarank.ipynb
+    └── 04_lambdamart.ipynb
 ```
 
 ---
@@ -111,7 +97,7 @@ Phase2_3_Learning_to_Rank/
 ## Getting Started
 
 ```bash
-# 1. Install the ltr package in editable mode
+# 1. Install the src package in editable mode
 pip install -e .
 
 # 2. Place the MQ2008 dataset at:
@@ -120,15 +106,5 @@ pip install -e .
 #    (or point DATA_PATH in the notebooks to your MQ2008 path)
 
 # 3. Open any notebook and run all cells
-jupyter notebook notebooks/01_pointwise.ipynb
+jupyter notebook notebooks_letor/01_pointwise.ipynb
 ```
-
----
-
-## Key Takeaways
-
-- **Pointwise is the simplest baseline** — treats ranking as regression with MSE loss; fast to train but ignores relative document ordering.
-- **RankNet introduces pairwise learning** — comparing document pairs directly leads to consistent gains over pointwise regression across all NDCG cutoffs.
-- **LambdaRank targets NDCG directly** — by weighting pairwise gradients by the NDCG change, it focuses capacity on the top of the ranked list, but the gains over RankNet are marginal on this dataset.
-- **LambdaMART is powerful but data-hungry** — gradient-boosted trees with Lambda gradients are state-of-the-art on large LETOR benchmarks, but underperform neural methods here due to MQ2008's small scale and low label diversity in some folds.
-- **Pairwise > Pointwise** — both pairwise neural methods outperform pointwise regression at every NDCG cutoff, confirming that ranking-aware training objectives matter.

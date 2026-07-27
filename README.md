@@ -79,12 +79,11 @@ Learning-To-Rank-for-Search/
 │
 └── Phase2_3_Learning_to_Rank/  ← Phase 2 & 3: LTR on MQ2008 + MSLR-WEB10K
     ├── README.md
+    ├── RESULTS.md
     ├── pyproject.toml
-    ├── ltr/                    ← Shared Python library
-    ├── notebooks/              ← Phase 2: MQ2008 notebooks
-    ├── notebooks_mslr/         ← Phase 3: MSLR-WEB10K notebooks
-    ├── ltr_results/            ← Phase 2 results (JSON)
-    └── ltr_results_mslr/       ← Phase 3 results (JSON)
+    ├── src/                    ← Shared Python library
+    ├── notebooks_letor/        ← Phase 2: MQ2008 notebooks
+    └── notebooks_mslr/         ← Phase 3: MSLR-WEB10K notebooks
 ```
 
 ---
@@ -102,7 +101,7 @@ jupyter notebook notebooks/01_TF-IDFvsBM25.ipynb
 # Phase 2 & 3 — Learning to Rank
 cd Phase2_3_Learning_to_Rank
 pip install -e .
-jupyter notebook notebooks/01_pointwise.ipynb
+jupyter notebook notebooks_letor/01_pointwise.ipynb
 ```
 
 > **Dataset Note:** Large dataset files (MSLR-WEB10K, MQ2008) are not included in this repository due to size. Download links are provided in each phase's README.

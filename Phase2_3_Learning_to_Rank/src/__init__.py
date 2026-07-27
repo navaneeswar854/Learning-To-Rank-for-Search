@@ -1,15 +1,15 @@
 """
-ltr — Learning-to-Rank package for LETOR4 / MQ2008.
+src — Shared utility library for Learning-to-Rank experiments.
 
 Public API
 ----------
-from ltr.data    import load_fold
-from ltr.models  import ScoringMLP
-from ltr.losses  import pointwise_mse, ranknet_loss, lambda_gradients
-from ltr.metrics import ndcg_at_k, per_query_ndcg, mean_ndcg, paired_significance
-from ltr.train   import train, train_multiseed, train_lambdamart_multiseed, set_seed
-from ltr.evaluate import cross_fold_eval, cross_fold_eval_lambdamart
-from ltr.lambdamart import LambdaMART
+from src.data    import load_fold
+from src.models  import ScoringMLP
+from src.losses  import pointwise_mse, ranknet_loss, lambda_gradients
+from src.metrics import ndcg_at_k, per_query_ndcg, mean_ndcg, paired_significance
+from src.train   import train, train_multiseed, train_lambdamart_multiseed, set_seed
+from src.evaluate import cross_fold_eval, cross_fold_eval_lambdamart
+from src.lambdamart import LambdaMART
 """
 
 from .data     import load_fold
